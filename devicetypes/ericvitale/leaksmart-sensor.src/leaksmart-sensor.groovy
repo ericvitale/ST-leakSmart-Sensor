@@ -17,7 +17,7 @@
 * I've simply adjusted for format, added better loggging, and updated the code to not require the simulator to config. 
 * The device configures itself.
 *
-* You can find this smart app @ https://github.com/ericvitale/ST-Trigger-My-Lights
+* You can find this device handler @ https://github.com/ericvitale/ST-leakSmart-Sensor/
 * You can find my other device handlers & SmartApps @ https://github.com/ericvitale
 *
 */
@@ -49,7 +49,7 @@ metadata {
             input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
         }
         section {
-        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "DEBUG", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "INFO", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
         }
     }
 
