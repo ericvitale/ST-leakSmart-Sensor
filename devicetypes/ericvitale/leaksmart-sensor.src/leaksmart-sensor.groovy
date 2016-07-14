@@ -30,7 +30,7 @@ metadata {
         capability "Temperature Measurement"
         capability "Water Sensor"
 
-        fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019", manufacturer: "Waxman", model: "leakSmartv2", deviceJoinName: "leakSmart Sensor"
+        fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019"//, manufacturer: "Waxman", model: "leakSmartv2", deviceJoinName: "leakSmart Sensor"
 	}
 
     simulator {
@@ -156,18 +156,14 @@ def parse(String description) {
     log("map = ${map}.", "DEBUG")
 
 	def result = map ? createEvent(map) : null
-
-    if (description?.startsWith('enroll request')) {
-        List cmds = enrollResponse()
-        log("cmds = ${cmds}.", "DEBUG")
-    	result = cmds?.collect { new physicalgraph.device.HubAction(it) }
-    }
+    
     return result
 }
 
 private Map parseCatchAllMessage(String description) {
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
+ 
     if (shouldProcessMessage(cluster)) {
 		switch(cluster.clusterId) {
             case 0x0001:
@@ -188,6 +184,10 @@ private Map parseCatchAllMessage(String description) {
                 String temp = cluster.data[2];
                 log("B02 temp data ${temp}.", "DEBUG")
                 return parseAlarmCode(temp)
+                break
+            
+            default:
+            	log("Unchecked Cluster", "DEBUG")
                 break
 		}
     } else {
@@ -267,35 +267,15 @@ private Map getBatteryResult(rawValue) {
     if (rawValue == 0 || rawValue == 255) {
     	 //Nothing
     } else {
-        if (volts > 4.5) {
+        if (volts > 4.8) {
             result.value = 100
-            result.descriptionText = "{{ device.displayName }} battery has too much power: (> 3.5) volts."
-        }
-        else {
-            if (device.getDataValue("manufacturer") == "SmartThings") {
-                volts = rawValue // For the batteryMap to work the key needs to be an int
-                def batteryMap = [28:100, 27:100, 26:100, 25:90, 24:90, 23:70,
-                                  22:70, 21:50, 20:50, 19:30, 18:30, 17:15, 16:1, 15:0]
-                def minVolts = 15
-                def maxVolts = 28
-
-                if (volts < minVolts)
-                    volts = minVolts
-                else if (volts > maxVolts)
-                    volts = maxVolts
-                def pct = batteryMap[volts]
-                if (pct != null) {
-                    result.value = pct
-                    result.descriptionText = "{{ device.displayName }} battery was {{ value }}%"
-                }
-            }
-            else {
-                def minVolts = 2.1
-                def maxVolts = 4.5
-                def pct = (volts - minVolts) / (maxVolts - minVolts)
-                result.value = Math.min(100, (int) pct * 100)
-                result.descriptionText = "{{ device.displayName }} battery was {{ value }}%"
-            }
+            result.descriptionText = "${device.displayName} battery has too much power: (>5) volts."
+        } else {
+			def minVolts = 2.1
+            def maxVolts = 4.5
+            def pct = (volts - minVolts) / (maxVolts - minVolts)
+            result.value = Math.min(100, (int) pct * 100)
+            result.descriptionText = "${device.displayName} battery was ${result.value.toString()}%"
         }
     }
 
@@ -313,9 +293,9 @@ private Map getTemperatureResult(value) {
     
     def descriptionText
     if ( temperatureScale == 'C' )
-    	descriptionText = '{{ device.displayName }} was {{ value }}°C'
+    	descriptionText = "${device.displayName} was ${value.toString()}°C"
     else
-    	descriptionText = '{{ device.displayName }} was {{ value }}°F'
+    	descriptionText = "${device.displayName} was ${value.toString()}°F"
 
     return [
         name: 'temperature',
@@ -331,9 +311,9 @@ private Map getMoistureResult(value) {
     def descriptionText
     
     if ( value == "wet" )
-    	descriptionText = '{{ device.displayName }} is wet'
+    	descriptionText = "${device.displayName } is wet"
     else
-    	descriptionText = '{{ device.displayName }} is dry'
+    	descriptionText = "${device.displayName }} is dry"
     
     return [
         name: 'water',
@@ -366,10 +346,11 @@ private Map parseAlarmCode(value) {
 
 def refresh() {
     log.debug "Refreshing"
+    
     def refreshCmds = [
         zigbee.readAttribute(0x0402, 0x0000), "delay 200",
         zigbee.readAttribute(0x0001, 0x0020), "delay 200",
-        zigbee.readAttribute(0x0b02, 0x0000), "delay 200"
+        //zigbee.readAttribute(0x0b02, 0x0000), "delay 200"
     ]
 
     return refreshCmds
@@ -383,7 +364,7 @@ def configure() {
     def configCmds = [
         zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01), "delay 500",
         zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064), "delay 500",
-        zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null), "delay 500"
+        //zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null), "delay 500"
 	]
 
 	return configCmds + refresh() // send refresh cmds as part of config
