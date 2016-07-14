@@ -350,7 +350,7 @@ def refresh() {
     def refreshCmds = [
         zigbee.readAttribute(0x0402, 0x0000), "delay 200",
         zigbee.readAttribute(0x0001, 0x0020), "delay 200",
-        //zigbee.readAttribute(0x0b02, 0x0000), "delay 200"
+        zigbee.readAttribute(0x0b02, 0x0000), "delay 200"
     ]
 
     return refreshCmds
@@ -364,7 +364,7 @@ def configure() {
     def configCmds = [
         zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01), "delay 500",
         zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064), "delay 500",
-        //zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null), "delay 500"
+        zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null), "delay 500"
 	]
 
 	return configCmds + refresh() // send refresh cmds as part of config
