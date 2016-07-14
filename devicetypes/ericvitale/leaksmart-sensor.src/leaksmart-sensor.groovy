@@ -136,13 +136,14 @@ def updated() {
 }
 
 def initialize() {
-	configure()
+	//configure()
 }
 
 def parse(String description) {
     log("parse(${description}.", "DEBUG")
 
     Map map = [:]
+    
     if (description?.startsWith('catchall:')) {
         map = parseCatchAllMessage(description)
     }
@@ -157,11 +158,11 @@ def parse(String description) {
 
 	def result = map ? createEvent(map) : null
 
-    if (description?.startsWith('enroll request')) {
+    /*if (description?.startsWith('enroll request')) {
         List cmds = enrollResponse()
         log("cmds = ${cmds}.", "DEBUG")
     	result = cmds?.collect { new physicalgraph.device.HubAction(it) }
-    }
+    }*/
     return result
 }
 
@@ -366,15 +367,12 @@ private Map parseAlarmCode(value) {
 
 def refresh() {
     log.debug "Refreshing"
-    def refreshCmds = [
-        zigbee.readAttribute(0x0402, 0x0000), "delay 200",
-        zigbee.readAttribute(0x0001, 0x0020), "delay 200",
-        zigbee.readAttribute(0x0b02, 0x0000), "delay 200"
-    ]
     
-    log.debug "refreshCmds = ${refreshCmds}."
-
-    return refreshCmds
+    def retVal = zigbee.readAttribute(0x0402, 0x0000) +
+    	zigbee.readAttribute(0x0001, 0x0020) +
+        zigbee.readAttribute(0x0b02, 0x0000)
+        
+    log.debug "refresh() -- retVal = ${retVal}"
 }
 
 def configure() {
@@ -392,17 +390,16 @@ def configure() {
     
     log.debug "Configuring Reporting, IAS CIE, and Bindings."
     
-    try{
-    def configCmds = [
-        zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01), "delay 500",
-        zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064), "delay 500",
-        zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null), "delay 500"
-	]
-    } catch(e) {
-    	log.debug "configure() -- configCmds -- ${e}"
-    }
-
-	//return configCmds + refresh() // send refresh cmds as part of config
+    def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
+    zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
+    zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null) +
+    zigbee.readAttribute(0x0402, 0x0000) +
+    zigbee.readAttribute(0x0001, 0x0020) +
+    zigbee.readAttribute(0x0b02, 0x0000)
+    
+    log.debug "configure() -- retVal = ${retVal}"
+    
+    return retVal
 }
 
 private getEndpointId() {
