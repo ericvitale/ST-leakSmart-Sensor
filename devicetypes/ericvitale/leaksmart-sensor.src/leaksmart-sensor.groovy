@@ -52,7 +52,7 @@ metadata {
             input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
         }
         section {
-        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "INFO", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "DEBUG", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
         }
     }
 
@@ -143,21 +143,18 @@ def updated() {
 }
 
 def initialize() {
-	//configure()
-    //if (!isConfigured()) {		
-		return response(configure())
-	//}
+	configure()
 }
 
 def poll() {
 	def minimumPollMinutes = (3 * 60)
 	def lastPoll = device.currentValue("lastPoll")
 	if ((new Date().time - lastPoll) > (minimumPollMinutes * 60 * 1000)) {
-		logDebug "Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago."
+		log("Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago.", "DEBUG")
 		return refresh()
 	}
 	else {
-		logDebug "Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes"
+		log("Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes", "DEBUG")
 	}
 }
 
@@ -180,11 +177,6 @@ def parse(String description) {
 
 	def result = map ? createEvent(map) : null
 
-    /*if (description?.startsWith('enroll request')) {
-        List cmds = enrollResponse()
-        log("cmds = ${cmds}.", "DEBUG")
-    	result = cmds?.collect { new physicalgraph.device.HubAction(it) }
-    }*/
     return result
 }
 
@@ -399,13 +391,13 @@ def refresh() {
 
 def configure() {
 	try {
-    sendEvent(name: "checkInterval", value: 7200, displayed: true)
+    	sendEvent(name: "checkInterval", value: 7200, displayed: true)
     } catch(e) {
     	log.debug "configure() -- sendEvent() -- ${e}"
     }
 
 	try {
-    String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
+    	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
     } catch(e) {
     	log.debug "configure() -- swapEndianHex() -- ${e}"
     }
