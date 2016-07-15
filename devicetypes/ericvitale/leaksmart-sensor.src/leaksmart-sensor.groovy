@@ -29,8 +29,11 @@ metadata {
         capability "Refresh"
         capability "Temperature Measurement"
         capability "Water Sensor"
+        capability "Polling"
+        
+		attribute "lastPoll", "number"
 
-        fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019", manufacturer: "Waxman", model: "leakSmartv2", deviceJoinName: "leakSmart Sensor"
+        fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019"
 	}
 
     simulator {
@@ -82,9 +85,13 @@ metadata {
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
+        
+        standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+            state "default", action:"configure", icon:"st.secondary.configure"
+        }
 
         main (["water", "temperature"])
-        details(["water", "temperature", "battery", "refresh"])
+        details(["water", "temperature", "battery", "refresh", "configure"])
     }
 }
 
@@ -128,15 +135,30 @@ def log(data, type) {
 }
 
 def installed() {
-    initialize()
+    return initialize()
 }
 
 def updated() {
-	initialize()
+	return initialize()
 }
 
 def initialize() {
 	//configure()
+    //if (!isConfigured()) {		
+		return response(configure())
+	//}
+}
+
+def poll() {
+	def minimumPollMinutes = (3 * 60)
+	def lastPoll = device.currentValue("lastPoll")
+	if ((new Date().time - lastPoll) > (minimumPollMinutes * 60 * 1000)) {
+		logDebug "Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago."
+		return refresh()
+	}
+	else {
+		logDebug "Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes"
+	}
 }
 
 def parse(String description) {
@@ -390,16 +412,19 @@ def configure() {
     
     log.debug "Configuring Reporting, IAS CIE, and Bindings."
     
-    def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
-    zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
-    zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null) +
-    zigbee.readAttribute(0x0402, 0x0000) +
-    zigbee.readAttribute(0x0001, 0x0020) +
-    zigbee.readAttribute(0x0b02, 0x0000)
-    
-    log.debug "configure() -- retVal = ${retVal}"
-    
-    return retVal
+    try {
+        def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
+        zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
+        zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null) +
+        zigbee.readAttribute(0x0402, 0x0000) +
+        zigbee.readAttribute(0x0001, 0x0020) +
+        zigbee.readAttribute(0x0b02, 0x0000)
+        
+        state.configured = true
+	    return retVal
+    } catch(e) {
+    	log.debug "configure() -- zigbee... -- ${e}"
+    }
 }
 
 private getEndpointId() {
@@ -426,4 +451,12 @@ private byte[] reverseArray(byte[] array) {
         i++;
     }
     return array
+}
+
+def isConfigured() {
+	if (state.configured == null || state.configured == false) {
+    	return false
+	} else {
+    	return true
+    }
 }
