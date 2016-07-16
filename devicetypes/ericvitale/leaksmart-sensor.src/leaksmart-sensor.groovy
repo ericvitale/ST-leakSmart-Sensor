@@ -1,6 +1,9 @@
 /*
 * Copyright 2016 SmartThings
 *
+* Version 1.0.1 - Added these version numbers (07/15/2016)
+* Version 1.0.0 - Initial Release (07/14/2016)
+* 
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at:
