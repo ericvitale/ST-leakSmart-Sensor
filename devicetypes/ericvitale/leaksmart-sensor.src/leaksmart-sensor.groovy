@@ -1,6 +1,7 @@
 /*
 * Copyright 2016 SmartThings
 *
+* Version 1.0.2 - Cleaned up the code by removing un-needed lines of code (07/15/2016)
 * Version 1.0.1 - Added these version numbers (07/15/2016)
 * Version 1.0.0 - Initial Release (07/14/2016)
 * 
@@ -241,7 +242,7 @@ private Map parseReportAttributeMessage(String description) {
         resultMap = getTemperatureResult(value)
     } else if (descMap.cluster == "0001" && descMap.attrId == "0020") {
     	resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
-    } else if (descMap.cluster == "0b02" && descMap.attrId == "0000") {
+    } else if (descMap.cluster == "0b02" && descMap.attrId == "0010") {
         log("Parsing cluster B02 data.", "DEBUG")
     }
 
@@ -285,35 +286,15 @@ private Map getBatteryResult(rawValue) {
     if (rawValue == 0 || rawValue == 255) {
     	 //Nothing
     } else {
-        if (volts > 4.5) {
+        if (volts > 4.8) {
             result.value = 100
-            result.descriptionText = "{{ device.displayName }} battery has too much power: (> 3.5) volts."
-        }
-        else {
-            if (device.getDataValue("manufacturer") == "SmartThings") {
-                volts = rawValue // For the batteryMap to work the key needs to be an int
-                def batteryMap = [28:100, 27:100, 26:100, 25:90, 24:90, 23:70,
-                                  22:70, 21:50, 20:50, 19:30, 18:30, 17:15, 16:1, 15:0]
-                def minVolts = 15
-                def maxVolts = 28
-
-                if (volts < minVolts)
-                    volts = minVolts
-                else if (volts > maxVolts)
-                    volts = maxVolts
-                def pct = batteryMap[volts]
-                if (pct != null) {
-                    result.value = pct
-                    result.descriptionText = "{{ device.displayName }} battery was {{ value }}%"
-                }
-            }
-            else {
-                def minVolts = 2.1
-                def maxVolts = 4.5
-                def pct = (volts - minVolts) / (maxVolts - minVolts)
-                result.value = Math.min(100, (int) pct * 100)
-                result.descriptionText = "{{ device.displayName }} battery was {{ value }}%"
-            }
+            result.descriptionText = "${device.displayName} battery has too much power: (> 3.5) volts."
+        } else {
+            def minVolts = 2.1
+            def maxVolts = 4.5
+            def pct = (volts - minVolts) / (maxVolts - minVolts)
+            result.value = Math.min(100, (int) pct * 100)
+        	result.descriptionText = "${device.displayName} battery was ${result.value}%."
         }
     }
 
@@ -331,9 +312,9 @@ private Map getTemperatureResult(value) {
     
     def descriptionText
     if ( temperatureScale == 'C' )
-    	descriptionText = '{{ device.displayName }} was {{ value }}°C'
+    	descriptionText = "${device.displayName} was ${value}°C"
     else
-    	descriptionText = '{{ device.displayName }} was {{ value }}°F'
+    	descriptionText = "${device.displayName} was ${value}°F"
 
     return [
         name: 'temperature',
@@ -349,9 +330,9 @@ private Map getMoistureResult(value) {
     def descriptionText
     
     if ( value == "wet" )
-    	descriptionText = '{{ device.displayName }} is wet'
+    	descriptionText = "${device.displayName} is wet"
     else
-    	descriptionText = '{{ device.displayName }} is dry'
+    	descriptionText = "${device.displayName} is dry"
     
     return [
         name: 'water',
@@ -386,13 +367,14 @@ def refresh() {
     log.debug "Refreshing"
     
     def retVal = zigbee.readAttribute(0x0402, 0x0000) +
-    	zigbee.readAttribute(0x0001, 0x0020) +
-        zigbee.readAttribute(0x0b02, 0x0000)
-        
+    	zigbee.readAttribute(0x0001, 0x0020) //+
+        //zigbee.readAttribute(0x0b02, 0x0000)
+
     log.debug "refresh() -- retVal = ${retVal}"
 }
 
 def configure() {
+	log.debug "Begin configure()."
 	try {
     	sendEvent(name: "checkInterval", value: 7200, displayed: true)
     } catch(e) {
@@ -410,12 +392,13 @@ def configure() {
     try {
         def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
         zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
-        zigbee.configureReporting(0x0b02, 0x0000, 0x10, 0, 3600, null) +
+        zigbee.configureReporting(0x0b02, 0x0000, 0x00, 0, 3600, null) +
         zigbee.readAttribute(0x0402, 0x0000) +
-        zigbee.readAttribute(0x0001, 0x0020) +
-        zigbee.readAttribute(0x0b02, 0x0000)
+        zigbee.readAttribute(0x0001, 0x0020) //+
+        //zigbee.readAttribute(0x0b02, 0x0000)
         
         state.configured = true
+        log.debug "Ending configure(), returning retVal = ${retVal}."
 	    return retVal
     } catch(e) {
     	log.debug "configure() -- zigbee... -- ${e}"
