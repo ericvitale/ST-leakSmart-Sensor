@@ -151,15 +151,7 @@ def initialize() {
 }
 
 def poll() {
-	def minimumPollMinutes = (3 * 60)
-	def lastPoll = device.currentValue("lastPoll")
-	if ((new Date().time - lastPoll) > (minimumPollMinutes * 60 * 1000)) {
-		log("Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago.", "DEBUG")
-		return refresh()
-	}
-	else {
-		log("Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes", "DEBUG")
-	}
+	refresh()
 }
 
 def parse(String description) {
@@ -392,7 +384,8 @@ def configure() {
     try {
         def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
         zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
-        zigbee.configureReporting(0x0b02, 0x0000, 0x00, 0, 3600, null) +
+        //zigbee.configureReporting(0x0b02, 0x0000, 0x00, 0, 3600, null) +
+        zigbee.configureReporting(0x0b02, 0x0000, 0x00, 30, 3600, null) +
         zigbee.readAttribute(0x0402, 0x0000) +
         zigbee.readAttribute(0x0001, 0x0020) //+
         //zigbee.readAttribute(0x0b02, 0x0000)
