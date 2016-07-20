@@ -357,12 +357,6 @@ private Map parseAlarmCode(value) {
 }
 
 def refresh() {
-
-	if (!isDuplicateCommand(state.lastRefresh, 5000)) {
-        state.lastRefresh = new Date().time
-    } else {
-    	return
-    }
     
     log.debug "Refreshing"
     
@@ -371,6 +365,8 @@ def refresh() {
         //zigbee.readAttribute(0x0b02, 0x0000)
 
     log.debug "refresh() -- retVal = ${retVal}"
+    
+    return retVal
 }
 
 def configure() {
@@ -378,27 +374,25 @@ def configure() {
 	
     if (!isDuplicateCommand(state.lastUpdated, 5000)) {
         state.lastUpdated = new Date().time
-    } else {
-    	return
-    }
 
-    log.debug "Configuring Reporting, IAS CIE, and Bindings."
-    
-    try {
-        def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
-        zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
-        //zigbee.configureReporting(0x0b02, 0x0000, 0x00, 0, 3600, null) +
-        zigbee.configureReporting(0x0b02, 0x0000, 0x00, 30, 3600, null) +
-        zigbee.readAttribute(0x0402, 0x0000) +
-        zigbee.readAttribute(0x0001, 0x0020) //+
-        //zigbee.readAttribute(0x0b02, 0x0000)
-        
-        state.configured = true
-        log.debug "Ending configure(), returning retVal = ${retVal}."
-	    return retVal
-    } catch(e) {
-    	log.debug "configure() -- zigbee... -- ${e}"
-    }
+        log.debug "Configuring Reporting, IAS CIE, and Bindings."
+
+        try {
+            def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
+            zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
+            //zigbee.configureReporting(0x0b02, 0x0000, 0x00, 0, 3600, null) +
+            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 30, 3600, null) +
+            zigbee.readAttribute(0x0402, 0x0000) +
+            zigbee.readAttribute(0x0001, 0x0020) //+
+            //zigbee.readAttribute(0x0b02, 0x0000)
+
+            state.configured = true
+            log.debug "Ending configure(), returning retVal = ${retVal}."
+            return retVal
+        } catch(e) {
+            log.debug "configure() -- zigbee... -- ${e}"
+        }
+	}
 }
 
 private getEndpointId() {
