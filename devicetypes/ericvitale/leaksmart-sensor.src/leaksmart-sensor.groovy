@@ -199,7 +199,7 @@ private Map parseCatchAllMessage(String description) {
                 log("B02 Cluster Data: ${cluster.data}.", "DEBUG")
                 String temp = cluster.data[2];
                 log("B02 temp data ${temp}.", "DEBUG")
-                return parseAlarmCode(temp)
+                resultMap = parseAlarmCode(temp)
                 break
 		}
     } else {
@@ -235,12 +235,14 @@ private Map parseReportAttributeMessage(String description) {
         resultMap = getTemperatureResult(value)
     } else if (descMap.cluster == "0001" && descMap.attrId == "0020") {
     	resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
-    } else if (descMap.cluster == "0b02" && descMap.attrId == "0010") {
+    } else if (descMap.cluster == "0b02" && descMap.attrId == "0000") {
         log("Parsing cluster B02 data.", "DEBUG")
     }
 
     return resultMap
 }
+
+
 
 private Map parseCustomMessage(String description) {
     Map resultMap = [:]
