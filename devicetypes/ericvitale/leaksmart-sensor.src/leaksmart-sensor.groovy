@@ -1,6 +1,7 @@
 /*
 * Copyright 2016 SmartThings
 *
+* Version 1.0.3 - Prevented duplicate refresh / configure calls, thanks @krlaframboise
 * Version 1.0.2 - Cleaned up the code by removing un-needed lines of code (07/15/2016)
 * Version 1.0.1 - Added these version numbers (07/15/2016)
 * Version 1.0.0 - Initial Release (07/14/2016)
@@ -356,6 +357,13 @@ private Map parseAlarmCode(value) {
 }
 
 def refresh() {
+
+	if (!isDuplicateCommand(state.lastRefresh, 5000)) {
+        state.lastRefresh = new Date().time
+    } else {
+    	return
+    }
+    
     log.debug "Refreshing"
     
     def retVal = zigbee.readAttribute(0x0402, 0x0000) +
@@ -367,18 +375,13 @@ def refresh() {
 
 def configure() {
 	log.debug "Begin configure()."
-	try {
-    	sendEvent(name: "checkInterval", value: 7200, displayed: true)
-    } catch(e) {
-    	log.debug "configure() -- sendEvent() -- ${e}"
+	
+    if (!isDuplicateCommand(state.lastUpdated, 5000)) {
+        state.lastUpdated = new Date().time
+    } else {
+    	return
     }
 
-	try {
-    	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-    } catch(e) {
-    	log.debug "configure() -- swapEndianHex() -- ${e}"
-    }
-    
     log.debug "Configuring Reporting, IAS CIE, and Bindings."
     
     try {
@@ -429,5 +432,13 @@ def isConfigured() {
     	return false
 	} else {
     	return true
+    }
+}
+
+private isDuplicateCommand(lastExecuted, allowedMil) {
+	if(lastExecuted == null) {
+    	return true
+    } else {
+	    !lastExecuted ? false : (lastExecuted + allowedMil > new Date().time) 
     }
 }
