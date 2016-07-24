@@ -1,31 +1,30 @@
 /*
-* Copyright 2016 SmartThings
-*
-* Version 1.0.3 - Prevented duplicate refresh / configure calls, thanks @krlaframboise
-* Version 1.0.2 - Cleaned up the code by removing un-needed lines of code (07/15/2016)
-* Version 1.0.1 - Added these version numbers (07/15/2016)
-* Version 1.0.0 - Initial Release (07/14/2016)
-* 
-* Licensed under the Apache License, Version 2.0 (the "License"); you may not
-* use this file except in compliance with the License. You may obtain a copy
-* of the License at:
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations
-* under the License.
-*
-* This code is by no means 100% all my work. This device handler is the work of SmartThings, @dhelm2, & @John_Luikart.
-* I've simply adjusted for format, added better loggging, and updated the code to not require the simulator to config. 
-* The device configures itself.
-*
-* You can find this device handler @ https://github.com/ericvitale/ST-leakSmart-Sensor/
-* You can find my other device handlers & SmartApps @ https://github.com/ericvitale
-*
-*/
+ * leakSmart Sensor
+ *
+ * Version 1.0.4 - Updated initialziation code which allows the device to pair and configure without additional setup, thanks again @krlaframboise (07/24/2016)
+ * Version 1.0.3 - Prevented duplicate refresh / configure calls, thanks @krlaframboise
+ * Version 1.0.2 - Cleaned up the code by removing un-needed lines of code (07/15/2016)
+ * Version 1.0.1 - Added these version numbers (07/15/2016)
+ * Version 1.0.0 - Initial Release (07/14/2016)
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ * This code is by no means 100% all my work. This device handler is the work of SmartThings, @dhelm2, @John_Luikart, & @krlaframboise.
+ *
+ * You can find this device handler @ https://github.com/ericvitale/ST-leakSmart-Sensor/
+ * You can find my other device handlers & SmartApps @ https://github.com/ericvitale
+ *
+ */
 
 metadata {
     definition (name: "leakSmart Sensor", namespace: "ericvitale", author: "ericvitale@gmail.com", category: "C2") {
@@ -52,12 +51,14 @@ metadata {
                 "http://cdn.device-gse.smartthings.com/Moisture/Moisture3.png"
             ])
         }
-        section {
+        
+        section("Temperature Configuration") {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
             input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
         }
-        section {
-        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "INFO", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+        
+        section("Settings") {
+        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "DEBUG", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
         }
     }
 
@@ -90,65 +91,74 @@ metadata {
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
-        
-        standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", action:"configure", icon:"st.secondary.configure"
-        }
 
         main (["water", "temperature"])
-        details(["water", "temperature", "battery", "refresh", "configure"])
+        details(["water", "temperature", "battery", "refresh"])
     }
 }
 
-def determineLogLevel(data) {
-	if(data.toUpperCase() == "TRACE") {
-    	return 0
-    } else if(data.toUpperCase() == "DEBUG") {
-    	return 1
-    } else if(data.toUpperCase() == "INFO") {
-    	return 2
-    } else if(data.toUpperCase() == "WARN") {
-    	return 3
-    } else {
-    	return 4
+private determineLogLevel(data) {
+    switch (data?.toUpperCase()) {
+        case "TRACE":
+            return 0
+            break
+        case "DEBUG":
+            return 1
+            break
+        case "INFO":
+            return 2
+            break
+        case "WARN":
+            return 3
+            break
+        case "ERROR":
+        	return 4
+            break
+        default:
+            return 1
     }
 }
 
 def log(data, type) {
-    
-    data = "leakSmart -- " + data
-    
-    try {
-        if(determineLogLevel(type) >= determineLogLevel(logging)) {
-            if(type.toUpperCase() == "TRACE") {
+    data = "leakSmart -- ${device.label} -- ${data ?: ''}"
+        
+    if (determineLogLevel(type) >= determineLogLevel(settings?.logging ?: "INFO")) {
+        switch (type?.toUpperCase()) {
+            case "TRACE":
                 log.trace "${data}"
-            } else if(type.toUpperCase() == "DEBUG") {
+                break
+            case "DEBUG":
                 log.debug "${data}"
-            } else if(type.toUpperCase() == "INFO") {
+                break
+            case "INFO":
                 log.info "${data}"
-            } else if(type.toUpperCase() == "WARN") {
+                break
+            case "WARN":
                 log.warn "${data}"
-            } else if(type.toUpperCase() == "ERROR") {
+                break
+            case "ERROR":
                 log.error "${data}"
-            } else {
-                log.error "leakSmart -- Invalid Log Setting"
-            }
+                break
+            default:
+                log.error "leakSmart -- ${device.label} -- Invalid Log Setting"
         }
-    } catch(e) {
-    	log.error ${e}
     }
 }
 
-def installed() {
-    return initialize()
-}
-
 def updated() {
-	return initialize()
-}
+    log("Update started.", "DEBUG")
+	if (!isDuplicateCommand(state.lastUpdated, 5000)) {
+        state.lastUpdated = new Date().time
 
-def initialize() {
-	configure()
+        if (state.configured) {
+        	log.debug "in state.configured, next is refresh"
+            return response(refresh())
+        }
+        else {
+        	log.debug "!state.configured, next is configure"
+            return response(configure())
+        }
+    }
 }
 
 def poll() {
@@ -198,7 +208,7 @@ private Map parseCatchAllMessage(String description) {
             case 0x0B02:
                 log("B02 Cluster Data: ${cluster.data}.", "DEBUG")
                 String temp = cluster.data[2];
-                log("B02 temp data ${temp}.", "DEBUG")
+                log.debug "B02 temp data ${temp}"
                 resultMap = parseAlarmCode(temp)
                 break
 		}
@@ -241,8 +251,6 @@ private Map parseReportAttributeMessage(String description) {
 
     return resultMap
 }
-
-
 
 private Map parseCustomMessage(String description) {
     Map resultMap = [:]
@@ -344,12 +352,12 @@ private Map parseAlarmCode(value) {
     Map resultMap = [:]
 
     switch(value) {
-        case "1": // Closed/No Motion/Dry
-            log("Sensor is dry.", "DEBUG")
+        case "1":
+            log("Sensor is dry.", "INFO")
             resultMap = getMoistureResult('dry')
             break
 
-        case "17": // Open/Motion/Wet
+        case "17":
             log("Sensor is wet!", "INFO")
             resultMap = getMoistureResult('wet')
             break
@@ -359,42 +367,35 @@ private Map parseAlarmCode(value) {
 }
 
 def refresh() {
-    
-    log.debug "Refreshing"
+    log("Refreshing...", "INFO")
     
     def retVal = zigbee.readAttribute(0x0402, 0x0000) +
-    	zigbee.readAttribute(0x0001, 0x0020) //+
-        //zigbee.readAttribute(0x0b02, 0x0000)
+    	zigbee.readAttribute(0x0001, 0x0020)
 
-    log.debug "refresh() -- retVal = ${retVal}"
+    log("refresh() -- retVal = ${retVal}", "DEBUG")
     
     return retVal
 }
 
 def configure() {
-	log.debug "Begin configure()."
-	
-    if (!isDuplicateCommand(state.lastUpdated, 5000)) {
-        state.lastUpdated = new Date().time
-
-        log.debug "Configuring Reporting, IAS CIE, and Bindings."
-
-        try {
+    log("Configuring Reporting, IAS CIE, and Bindings.", "DEBUG")
+    
+    try {
             def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
             zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
-            //zigbee.configureReporting(0x0b02, 0x0000, 0x00, 0, 3600, null) +
             zigbee.configureReporting(0x0b02, 0x0000, 0x00, 30, 3600, null) +
             zigbee.readAttribute(0x0402, 0x0000) +
-            zigbee.readAttribute(0x0001, 0x0020) //+
-            //zigbee.readAttribute(0x0b02, 0x0000)
+            zigbee.readAttribute(0x0001, 0x0020)
 
+            log("Ending configure(), returning retVal = ${retVal}.", "DEBUG")
+            
             state.configured = true
-            log.debug "Ending configure(), returning retVal = ${retVal}."
-            return retVal
-        } catch(e) {
-            log.debug "configure() -- zigbee... -- ${e}"
-        }
-	}
+            
+			return retVal	
+            
+    } catch(e) {
+            log("ERROR -- ${e}", "ERROR")
+    } 
 }
 
 private getEndpointId() {
