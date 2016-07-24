@@ -24,17 +24,13 @@ This SmartThings device handler is meant for the leakSmart Sensor.
 6. Click the blue "Save" button above the editor window.
 7. Click the "Publish" button next to it and select "For Me". You have now self-published your Device Handler.
 
-## Post Installation Configuration
-1. Navigate to the device on your SmartThings app.
-2. Press the gear icons.
-3. Press done (or update the log level and done).
-4. Wait about 10 - 15 seconds.
-5. Press the "refresh" button.
-6. Wait about 10 - 15 seconds.
-7. Press the "configure" button.
-8. Wait about 10 - 15 seconds.
-9. Temperature and battery level should begin to appear. 
-10. If they don't begin to appear, do another cycle of 2-8.
+## Pairing the Device
+This device is a bit interesting to get it to pair. I've seen a few scenarios happen. Here is what I generally do:
+1. Get your ST app into pairing mode.
+2. Open the battery cover and remove one of the batteries.
+3. Hold down the button insert the battery. Immediatly unpress the button and you should get a long beep (1 second).
+4. Wait a second and then long press the button 2-3 seconds, after that it should start beeping and be discovered by ST. If it is not discovered by ST, try again. If still not discovered, press the button a few times quickly. 
+5. ST should find it quickly once in pairing mode. If after you setup the device on ST it is still beeping, something went wrong. Delete the device from ST and reset it (hold the button for 5+ seconds, sometimes you have to do this more than once) and start over.
 
 
 ## Acknowledgements
