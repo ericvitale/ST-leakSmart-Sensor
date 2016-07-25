@@ -34,5 +34,4 @@ This device is a bit interesting to get it to pair. I've seen a few scenarios ha
 
 
 ## Acknowledgements
-This code is by no means 100% all my work. This device handler is the work of SmartThings, @dhelm2, & @John_Luikart.
-I've simply adjusted for format, added better loggging, and updated the code to not require the simulator to config. 
+This code is by no means 100% all my work. This device handler is the work of @dhelm2, @John_Luikart, & @krlaframboise.
