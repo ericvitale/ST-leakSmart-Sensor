@@ -1,6 +1,7 @@
 /*
  * leakSmart Sensor
  *
+ * VERSION 1.0.5 - Changed the default log level to "INFO" versus "DEBUG" (07/25/2016)
  * Version 1.0.4 - Updated initialziation code which allows the device to pair and configure without additional setup, thanks again @krlaframboise (07/24/2016)
  * Version 1.0.3 - Prevented duplicate refresh / configure calls, thanks @krlaframboise
  * Version 1.0.2 - Cleaned up the code by removing un-needed lines of code (07/15/2016)
@@ -58,7 +59,7 @@ metadata {
         }
         
         section("Settings") {
-        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "DEBUG", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+        	input "logging", "enum", title: "Log Level", required: false, defaultValue: "INFO", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
         }
     }
 
