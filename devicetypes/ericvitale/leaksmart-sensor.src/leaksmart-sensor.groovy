@@ -3,7 +3,8 @@
  *
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
  *	 Increased the wet/dry window from 30 seconds to 1 second. This is just a guess at 
- *   at fix. (07/28/2016)
+ *   at fix. Decreased frequency of temperature reporting from 30 seconds to 5 minutes. 
+ *   (07/28/2016)
  * Version 1.0.5 - Changed the default log level to "INFO" versus "DEBUG" (07/25/2016)
  * Version 1.0.4 - Updated initialziation code which allows the device to pair and 
  *   configure without additional setup, thanks again @krlaframboise (07/24/2016)
@@ -409,7 +410,7 @@ def configure() {
     
     try {
             def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 1440, 21600, 0x01) +
-            zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
+            zigbee.configureReporting(0x0402, 0x0000, 0x29, 300, 3600, 0x0064) +
             zigbee.configureReporting(0x0b02, 0x0000, 0x00, 1, 3600, null) +
             zigbee.readAttribute(0x0402, 0x0000) +
             zigbee.readAttribute(0x0001, 0x0020)
