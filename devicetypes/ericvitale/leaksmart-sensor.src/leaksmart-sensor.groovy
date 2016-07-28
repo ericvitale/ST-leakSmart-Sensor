@@ -1,8 +1,12 @@
 /*
  * leakSmart Sensor
  *
- * VERSION 1.0.5 - Changed the default log level to "INFO" versus "DEBUG" (07/25/2016)
- * Version 1.0.4 - Updated initialziation code which allows the device to pair and configure without additional setup, thanks again @krlaframboise (07/24/2016)
+ * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
+ *	 Increased the wet/dry window from 30 seconds to 1 second. This is just a guess at 
+ *   at fix. (07/28/2016)
+ * Version 1.0.5 - Changed the default log level to "INFO" versus "DEBUG" (07/25/2016)
+ * Version 1.0.4 - Updated initialziation code which allows the device to pair and 
+ *   configure without additional setup, thanks again @krlaframboise (07/24/2016)
  * Version 1.0.3 - Prevented duplicate refresh / configure calls, thanks @krlaframboise
  * Version 1.0.2 - Cleaned up the code by removing un-needed lines of code (07/15/2016)
  * Version 1.0.1 - Added these version numbers (07/15/2016)
@@ -188,6 +192,15 @@ def parse(String description) {
     return result
 }
 
+/* 0000
+   0001 - Battery
+   0003 - 
+   0020
+   0402 - Temp
+   0B02 - Wet / Dry
+   FC02
+*/
+
 private Map parseCatchAllMessage(String description) {
     Map resultMap = [:]
     def cluster = zigbee.parse(description)
@@ -211,6 +224,10 @@ private Map parseCatchAllMessage(String description) {
                 String temp = cluster.data[2];
                 log.debug "B02 temp data ${temp}"
                 resultMap = parseAlarmCode(temp)
+                break
+                
+            default:
+            	log("Unhandled Cluster Data: ${cluster.data}.", "WARN")
                 break
 		}
     } else {
@@ -372,19 +389,28 @@ def refresh() {
     
     def retVal = zigbee.readAttribute(0x0402, 0x0000) +
     	zigbee.readAttribute(0x0001, 0x0020)
-
+        
     log("refresh() -- retVal = ${retVal}", "DEBUG")
     
     return retVal
 }
 
+/* 0000
+   0001 - Battery
+   0003 - 
+   0020
+   0402 - Temp
+   0B02 - Wet / Dry
+   FC02
+*/
+
 def configure() {
     log("Configuring Reporting, IAS CIE, and Bindings.", "DEBUG")
     
     try {
-            def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 30, 21600, 0x01) +
+            def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 1440, 21600, 0x01) +
             zigbee.configureReporting(0x0402, 0x0000, 0x29, 30, 3600, 0x0064) +
-            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 30, 3600, null) +
+            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 1, 3600, null) +
             zigbee.readAttribute(0x0402, 0x0000) +
             zigbee.readAttribute(0x0001, 0x0020)
 
