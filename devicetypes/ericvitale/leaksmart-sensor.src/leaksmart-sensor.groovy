@@ -1,6 +1,7 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.0.6.6 - Fix for attribute id 8081
  * Version 1.0.6.5 - An attempt to work...
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
  *	 Increased the wet/dry window from 30 seconds to 1 second. This is just a guess at 
@@ -260,6 +261,8 @@ private Map parseReportAttributeMessage(String description) {
     log("Desc Map: $descMap.", "DEBUG")
 
     Map resultMap = [:]
+
+	log("map = ${map}", "DEBUG")
     
     if (descMap.cluster == "0402" && descMap.attrId == "0000") {
         def value = getTemperature(descMap.value)
@@ -268,13 +271,15 @@ private Map parseReportAttributeMessage(String description) {
     	resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
     } else if (descMap.cluster == "0b02" && descMap.attrId == "0000") {
         log("Parsing cluster B02 data.", "DEBUG")
+    } else if (descMap.cluster == "0b02" && descMap.attrId == "8101") {
         if(v1) {
-        	if(map['encoding'].trim() == "11") {
-            	return parseAlarmCode("17")
+        	log("In compatibility mode!", "DEBUG")
+            if(map['encoding'].trim() == "11") {
+            	resultMap =  parseAlarmCode("17")
             } else if(map['encoding'].trim() == "01") {
-            	return parseAlarmCode("1")
+                resultMap = parseAlarmCode("1")
             }
-        }
+    	}
     }
 
     return resultMap
