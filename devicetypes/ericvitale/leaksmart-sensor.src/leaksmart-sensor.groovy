@@ -1,7 +1,7 @@
 /*
  * leakSmart Sensor
  *
- * Version 1.0.6.6 - Updated message handling to handle when the sensor sends a "wet/dry" 
+ * Version 1.0.6.7 - Updated message handling to handle when the sensor sends a "wet/dry" 
  *  alert over the read attr message instead of catchall message
  * Version 1.0.6.5 - An attempt to work...
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
