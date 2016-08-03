@@ -1,7 +1,8 @@
 /*
  * leakSmart Sensor
  *
- * Version 1.0.6.6 - Fix for attribute id 8081
+ * Version 1.0.6.6 - Updated message handling to handle when the sensor sends a "wet/dry" 
+ *  alert over the read attr message instead of catchall message
  * Version 1.0.6.5 - An attempt to work...
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
  *	 Increased the wet/dry window from 30 seconds to 1 second. This is just a guess at 
@@ -274,9 +275,9 @@ private Map parseReportAttributeMessage(String description) {
     } else if (descMap.cluster == "0b02" && descMap.attrId == "8101") {
         if(v1) {
         	log("In compatibility mode!", "DEBUG")
-            if(map['encoding'].trim() == "11") {
+            if(descMap.encoding.trim() == "11") {
             	resultMap =  parseAlarmCode("17")
-            } else if(map['encoding'].trim() == "01") {
+            } else if(descMap.encoding.trim() == "01") {
                 resultMap = parseAlarmCode("1")
             }
     	}
