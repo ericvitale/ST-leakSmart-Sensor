@@ -1,6 +1,8 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.0.7 - Updated to add a compatibility mode for sensors that are not sending 
+ *   data as expected, could be related to V1 of the hub.
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
  *	 Increased the wet/dry window from 30 seconds to 1 second. This is just a guess at 
  *   at fix. Decreased frequency of temperature reporting from 30 seconds to 5 minutes. 
@@ -65,6 +67,7 @@ metadata {
         
         section("Settings") {
         	input "logging", "enum", title: "Log Level", required: false, defaultValue: "INFO", options: ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+            input "v1", "bool", title: "Compatibility Mode?", required: true, defaultValue: false
         }
     }
 
@@ -258,14 +261,25 @@ private Map parseReportAttributeMessage(String description) {
     log("Desc Map: $descMap.", "DEBUG")
 
     Map resultMap = [:]
+
+	log("map = ${map}", "DEBUG")
     
-    if (descMap.cluster == "0402" && descMap.attrId == "0000") {
+    if (descMap.cluster.toLowerCase() == "0402" && descMap.attrId.toLowerCase() == "0000") {
         def value = getTemperature(descMap.value)
         resultMap = getTemperatureResult(value)
-    } else if (descMap.cluster == "0001" && descMap.attrId == "0020") {
+    } else if (descMap.cluster.toLowerCase() == "0001" && descMap.attrId.toLowerCase() == "0020") {
     	resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
-    } else if (descMap.cluster == "0b02" && descMap.attrId == "0000") {
+    } else if (descMap.cluster.toLowerCase() == "0b02" && descMap.attrId.toLowerCase() == "0000") {
         log("Parsing cluster B02 data.", "DEBUG")
+    } else if (descMap.cluster.toLowerCase() == "0b02" && descMap.attrId.toLowerCase() == "8101") {
+        if(v1) {
+        	log("In compatibility mode!", "DEBUG")
+            if(descMap.encoding.trim() == "11") {
+            	resultMap =  parseAlarmCode("17")
+            } else if(descMap.encoding.trim() == "01") {
+                resultMap = parseAlarmCode("1")
+            }
+    	}
     }
 
     return resultMap
@@ -411,7 +425,7 @@ def configure() {
     try {
             def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 1440, 21600, 0x01) +
             zigbee.configureReporting(0x0402, 0x0000, 0x29, 300, 3600, 0x0064) +
-            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 1, 3600, null) +
+            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 5, 3600, null) +
             zigbee.readAttribute(0x0402, 0x0000) +
             zigbee.readAttribute(0x0001, 0x0020)
 
