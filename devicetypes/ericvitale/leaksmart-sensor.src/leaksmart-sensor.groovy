@@ -1,8 +1,8 @@
 /*
  * leakSmart Sensor
  *
- * Version 1.0.6.7 - Updated message handling to handle when the sensor sends a "wet/dry" 
- *  alert over the read attr message instead of catchall message
+ * Version 1.0.6.8 - Updated message handling ot handle lowercase clusters.
+ * Version 1.0.6.7 - Updated message handling to handle when the sensor sends a "wet/dry". 
  * Version 1.0.6.5 - An attempt to work...
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
  *	 Increased the wet/dry window from 30 seconds to 1 second. This is just a guess at 
@@ -265,14 +265,14 @@ private Map parseReportAttributeMessage(String description) {
 
 	log("map = ${map}", "DEBUG")
     
-    if (descMap.cluster == "0402" && descMap.attrId == "0000") {
+    if (descMap.cluster.toLowerCase() == "0402" && descMap.attrId.toLowerCase() == "0000") {
         def value = getTemperature(descMap.value)
         resultMap = getTemperatureResult(value)
-    } else if (descMap.cluster == "0001" && descMap.attrId == "0020") {
+    } else if (descMap.cluster.toLowerCase() == "0001" && descMap.attrId.toLowerCase() == "0020") {
     	resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
-    } else if (descMap.cluster == "0b02" && descMap.attrId == "0000") {
+    } else if (descMap.cluster.toLowerCase() == "0b02" && descMap.attrId.toLowerCase() == "0000") {
         log("Parsing cluster B02 data.", "DEBUG")
-    } else if (descMap.cluster == "0b02" && descMap.attrId == "8101") {
+    } else if (descMap.cluster.toLowerCase() == "0b02" && descMap.attrId.toLowerCase() == "8101") {
         if(v1) {
         	log("In compatibility mode!", "DEBUG")
             if(descMap.encoding.trim() == "11") {
