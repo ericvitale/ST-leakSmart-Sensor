@@ -31,6 +31,9 @@ This device is a bit interesting to get it to pair. I've seen a few scenarios ha
 3. Hold down the button insert the battery. Immediatly unpress the button and you should get a long beep (1 second).
 4. Wait a second and then long press the button 2-3 seconds, after that it should start beeping and be discovered by ST. If it is not discovered by ST, try again. If still not discovered, press the button a few times quickly. 
 5. ST should find it quickly once in pairing mode. If after you setup the device on ST it is still beeping, something went wrong. Delete the device from ST and reset it (hold the button for 5+ seconds, sometimes you have to do this more than once) and start over.
+ 
+## Compatibility Mode
+There is an optional setting in the device configuration. If you are having issues getting it to report wet/dry, try enabling compatibility mode.
 
 
 ## Acknowledgements
