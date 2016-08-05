@@ -1,6 +1,7 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.0.8 - Added a label to display the last activity date/time of the device.
  * Version 1.0.7 - Updated to add a compatibility mode for sensors that are not sending 
  *   data as expected, could be related to V1 of the hub.
  * Version 1.0.6 - Decreased frequency of battery reporting from 5 minutes to 4 hours. 
@@ -44,6 +45,7 @@ metadata {
         capability "Polling"
         
 		attribute "lastPoll", "number"
+        attribute "lastActivity", "string"
 
         fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019"
 	}
@@ -78,6 +80,10 @@ metadata {
                 attributeState "dry", label: "Dry", icon:"st.alarm.water.dry", backgroundColor:"#ffffff"
                 attributeState "wet", label: "Wet", icon:"st.alarm.water.wet", backgroundColor:"#53a7c0"
             }
+            
+            tileAttribute ("device.lastActivity", key: "SECONDARY_CONTROL") {
+				attributeState "default", label:'Last activity: ${currentValue}', action: "refresh.refresh"
+			}
         }
 
         valueTile("temperature", "device.temperature", inactiveLabel: false, width: 2, height: 2) {
@@ -100,6 +106,8 @@ metadata {
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
+        
+        
 
         main (["water", "temperature"])
         details(["water", "temperature", "battery", "refresh"])
@@ -154,6 +162,10 @@ def log(data, type) {
     }
 }
 
+def getLastMessageDateTimeStamp() {
+	return state.updateTimeStamp
+}
+
 def updated() {
     log("Update started.", "DEBUG")
 	if (!isDuplicateCommand(state.lastUpdated, 5000)) {
@@ -192,6 +204,9 @@ def parse(String description) {
     log("map = ${map}.", "DEBUG")
 
 	def result = map ? createEvent(map) : null
+    
+    //lastActivity = new Date()
+    updateDeviceLastActivity(new Date())
 
     return result
 }
@@ -397,6 +412,11 @@ private Map parseAlarmCode(value) {
 	}
 
     return resultMap
+}
+
+def updateDeviceLastActivity(lastActivity) {
+	def finalString = lastActivity?.format('MM/d/yyyy hh:mm a',location.timeZone)    
+	sendEvent(name: "lastActivity", value: finalString, display: false , displayed: false)
 }
 
 def refresh() {
