@@ -47,7 +47,6 @@ metadata {
         capability "Water Sensor"
         capability "Polling"
         
-		attribute "lastPoll", "number"
         attribute "lastActivity", "string"
 
         fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019"
@@ -186,15 +185,7 @@ def updated() {
 }
 
 def poll() {
-	def minimumPollMinutes = (60) // 1 Hour
-	def lastPoll = device.currentValue("lastPoll")
-	if ((new Date().time - lastPoll) > (minimumPollMinutes * 60 * 1000)) {
-		log("Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago.", "INFO")
-		return refresh()
-	}
-	else {
-		log("Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes", "DEBUG")
-	}
+	return refresh()
 }
 
 def parse(String description) {
