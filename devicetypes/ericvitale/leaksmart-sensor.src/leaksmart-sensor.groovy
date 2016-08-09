@@ -1,6 +1,9 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.0.9 - Cleaned up some logging, providing proper logs at the INFO level.
+ *  Set the default log level to INFO. Updated the poll method for proper poll 
+ *  handling.
  * Version 1.0.8 - Added a label to display the last activity date/time of the device.
  * Version 1.0.7 - Updated to add a compatibility mode for sensors that are not sending 
  *   data as expected, could be related to V1 of the hub.
@@ -183,7 +186,15 @@ def updated() {
 }
 
 def poll() {
-	refresh()
+	def minimumPollMinutes = (60) // 1 Hour
+	def lastPoll = device.currentValue("lastPoll")
+	if ((new Date().time - lastPoll) > (minimumPollMinutes * 60 * 1000)) {
+		logDebug "Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago."
+		return refresh()
+	}
+	else {
+		logDebug "Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes"
+	}
 }
 
 def parse(String description) {
@@ -205,7 +216,6 @@ def parse(String description) {
 
 	def result = map ? createEvent(map) : null
     
-    //lastActivity = new Date()
     updateDeviceLastActivity(new Date())
 
     return result
@@ -314,9 +324,11 @@ private Map parseCustomMessage(String description) {
 def getTemperature(value) {
     def celsius = Integer.parseInt(value, 16).shortValue() / 100
     
-    if(getTemperatureScale() == "C"){
+    if(getTemperatureScale() == "C") {
+    	log("Temperature Reported: ${celsius}C.", "INFO")
     	return celsius
     } else {
+    	log("Temperature Reported: ${celsiusToFahrenheit(celsius)}F.", "INFO")
     	return celsiusToFahrenheit(celsius) as Integer
     }
 }
@@ -348,6 +360,8 @@ private Map getBatteryResult(rawValue) {
         	result.descriptionText = "${device.displayName} battery was ${result.value}%."
         }
     }
+    
+    log("Battery Value Reported: ${result.value}%.", "INFO")
 
     return result
 }
@@ -425,8 +439,6 @@ def refresh() {
     def retVal = zigbee.readAttribute(0x0402, 0x0000) +
     	zigbee.readAttribute(0x0001, 0x0020)
         
-    log("refresh() -- retVal = ${retVal}", "DEBUG")
-    
     return retVal
 }
 
