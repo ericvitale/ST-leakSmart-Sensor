@@ -189,11 +189,11 @@ def poll() {
 	def minimumPollMinutes = (60) // 1 Hour
 	def lastPoll = device.currentValue("lastPoll")
 	if ((new Date().time - lastPoll) > (minimumPollMinutes * 60 * 1000)) {
-		logDebug "Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago."
+		log("Poll: Refreshing because lastPoll was more than ${minimumPollMinutes} minutes ago.", "INFO")
 		return refresh()
 	}
 	else {
-		logDebug "Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes"
+		log("Poll: Skipped because lastPoll was within ${minimumPollMinutes} minutes", "DEBUG")
 	}
 }
 
