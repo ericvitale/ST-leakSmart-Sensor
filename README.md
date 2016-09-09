@@ -5,7 +5,7 @@ This SmartThings device handler is meant for the leakSmart Sensor.
 
 ## Installation via GitHub Integration
 1. Open SmartThings IDE in your web browser and log into your account.
-2. Click on the "My Device Types" section in the navigation bar.
+2. Click on the "My Device Handlers" section in the navigation bar.
 3. Click on "Settings".
 4. Click "Add New Repository".
 5. Enter "ericvitale" as the namespace.
