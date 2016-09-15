@@ -1,6 +1,17 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.2.0 - Various improvements, details below. (09/15/2016)
+ *  New configuration options for setting the upper and lower limit of your battery
+ *   life which will allow users to better tune the battery reporting against the
+ *   actual voltage output profiles for their particular batteries. For example,
+ *   rechargeable batteries have a different voltage profile than regular batteries.
+ *  Resolved a defect in device configuration that was causing the devices to report
+ *   temperature too frequently leading to a reduced battery life.
+ *  Added a flag so I could force a device reconfiguration without having to reset or
+ *   use the simulator.
+ * Version 1.1.0 - Increased time between reports to increase battery life. Also
+ *  adjusted the battery calculation. 4.5 max, 3.6 min.
  * Version 1.0.9 - Cleaned up some logging, providing proper logs at the INFO level.
  *  Set the default log level to INFO. Updated the poll method for proper poll 
  *  handling.
@@ -67,6 +78,11 @@ metadata {
         section("Temperature Configuration") {
             input title: "Temperature Offset", description: "This feature allows you to correct any temperature variations by selecting an offset. Ex: If your sensor consistently reports a temp that's 5 degrees too warm, you'd enter '-5'. If 3 degrees too cold, enter '+3'.", displayDuringSetup: false, type: "paragraph", element: "paragraph"
             input "tempOffset", "number", title: "Degrees", description: "Adjust temperature by this many degrees", range: "*..*", displayDuringSetup: false
+        }
+        
+        section("Battery Configuration") {
+        	input "fullVolts", "decimal", title: "Max Voltage", defaultValue: getDefaultTop()
+            input "emptyVolts", "decimal", title: "Min Voltage", defaultValue: getDefaultBottom()
         }
         
         section("Settings") {
@@ -170,22 +186,38 @@ def getLastMessageDateTimeStamp() {
 
 def updated() {
     log("Update started.", "DEBUG")
+    
+    setTopVolts(fullVolts)
+    setBottomVolts(emptyVolts)
+    
+    log("Top End Voltage = ${getTopVolts()}.", "INFO")
+    log("Bottom End Voltage = ${getBottomVolts()}.", "INFO")
+    
 	if (!isDuplicateCommand(state.lastUpdated, 5000)) {
         state.lastUpdated = new Date().time
+        
+        if(shouldReconfigure()) {
+        	state.configured = false
+            setStateVersion(getNewStateVersion())
+            log("Initializing a reconfigure.", "INFO")
+        }
 
         if (state.configured) {
-        	log.debug "in state.configured, next is refresh"
+        	log("Device already configured.", "TRACE")
             return response(refresh())
         }
         else {
-        	log.debug "!state.configured, next is configure"
+        	log("Device being reconfigured.", "INFO")
             return response(configure())
         }
+    } else {
+    	log("...xxx...", "INFO")
     }
 }
 
 def poll() {
-	return refresh()
+	def retVal = zigbee.readAttribute(0x0402, 0x0000)    
+    return retVal
 }
 
 def parse(String description) {
@@ -340,12 +372,12 @@ private Map getBatteryResult(rawValue) {
     if (rawValue == 0 || rawValue == 255) {
     	 //Nothing
     } else {
-        if (volts > 4.8) {
+        if (volts > (getTopVolts() + 0.3)) {
             result.value = 100
-            result.descriptionText = "${device.displayName} battery has too much power: (> 3.5) volts."
+            result.descriptionText = "${device.displayName} battery has too much power."
         } else {
-            def minVolts = 2.1
-            def maxVolts = 4.5
+            def minVolts = getBottomVolts()
+            def maxVolts = getTopVolts()
             def pct = (volts - minVolts) / (maxVolts - minVolts)
             result.value = Math.min(100, (int) pct * 100)
         	result.descriptionText = "${device.displayName} battery was ${result.value}%."
@@ -446,9 +478,10 @@ def configure() {
     log("Configuring Reporting, IAS CIE, and Bindings.", "DEBUG")
     
     try {
-            def retVal = zigbee.configureReporting(0x0001, 0x0020, 0x20, 1440, 21600, 0x01) +
-            zigbee.configureReporting(0x0402, 0x0000, 0x29, 300, 3600, 0x0064) +
-            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 5, 3600, null) +
+            def retVal = 
+            zigbee.configureReporting(0x0001, 0x0020, 0x20, 1440, 84600, 0x01) +
+            zigbee.configureReporting(0x0402, 0x0000, 0x29, 300, 14400, 0x0064) +
+            zigbee.configureReporting(0x0b02, 0x0000, 0x00, 5, 14400, null) +
             zigbee.readAttribute(0x0402, 0x0000) +
             zigbee.readAttribute(0x0001, 0x0020)
 
@@ -498,9 +531,61 @@ def isConfigured() {
 }
 
 private isDuplicateCommand(lastExecuted, allowedMil) {
-	if(lastExecuted == null) {
+	!lastExecuted ? false : (lastExecuted + allowedMil > new Date().time)
+}
+
+def getTopVolts() {
+	if(state.topVolts == null) {
+    	state.topVolts = getDefaultTop()
+    }
+	
+    return state.topVolts
+}
+
+def setTopVolts(volts) {
+	state.topVolts = volts
+}
+
+def getBottomVolts() {
+	if(state.bottomVolts == null) {
+    	state.bottomVolts = getDefaultBottom()
+    }
+
+	return state.bottomVolts
+}
+
+def setBottomVolts(volts) {
+	state.bottomVolts = volts
+}
+
+def getStateVersion() {
+	if(state.version != null) {
+		return state.version
+    } else {
+    	return 0
+    }
+}
+
+def setStateVersion(val) {
+	state.version = val
+}
+
+def getNewStateVersion() {
+	return 2
+}
+
+def shouldReconfigure() {
+	if(getNewStateVersion() > getStateVersion()) {
     	return true
     } else {
-	    !lastExecuted ? false : (lastExecuted + allowedMil > new Date().time) 
+    	return false
     }
+}
+
+def getDefaultTop() {
+	return 4.5
+}
+
+def getDefaultBottom() {
+	return 3.0
 }
