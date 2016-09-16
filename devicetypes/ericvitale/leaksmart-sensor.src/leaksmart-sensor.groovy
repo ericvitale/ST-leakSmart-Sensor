@@ -475,7 +475,7 @@ def refresh() {
 */
 
 def configure() {
-    log("Configuring Reporting, IAS CIE, and Bindings.", "DEBUG")
+    log("Configuring Reporting, IAS CIE, and Bindings.", "INFO")
     
     try {
             def retVal = 
@@ -485,7 +485,7 @@ def configure() {
             zigbee.readAttribute(0x0402, 0x0000) +
             zigbee.readAttribute(0x0001, 0x0020)
 
-            log("Ending configure(), returning retVal = ${retVal}.", "DEBUG")
+            log("Ending configure(), returning retVal = ${retVal}.", "INFO")
             
             state.configured = true
             
