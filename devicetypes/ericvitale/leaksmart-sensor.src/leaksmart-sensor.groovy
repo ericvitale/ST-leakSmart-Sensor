@@ -210,8 +210,6 @@ def updated() {
         	log("Device being reconfigured.", "INFO")
             return response(configure())
         }
-    } else {
-    	log("...xxx...", "INFO")
     }
 }
 
