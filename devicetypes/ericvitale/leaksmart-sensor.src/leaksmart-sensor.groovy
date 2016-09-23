@@ -336,6 +336,16 @@ private Map parseCustomMessage(String description) {
 def getTemperature(value) {
     def celsius = Integer.parseInt(value, 16).shortValue() / 100
     
+    log("${getVersionStatementString()}", "INFO")
+    
+    if(shouldReconfigure()) {
+        	state.configured = false
+            setStateVersion(getNewStateVersion())
+            log("Initializing a reconfigure.", "INFO")
+            log("Device being reconfigured.", "INFO")
+            return response(configure())
+    }
+    
     if(getTemperatureScale() == "C") {
     	log("Temperature Reported: ${celsius}C.", "INFO")
     	return celsius
@@ -374,6 +384,14 @@ private Map getBatteryResult(rawValue) {
     }
     
     log("Battery Value Reported: ${result.value}%.", "INFO")
+    log("${getVersionStatementString()}", "INFO")
+    if(shouldReconfigure()) {
+    	state.configured = false
+        setStateVersion(getNewStateVersion())
+        log("Initializing a reconfigure.", "INFO")
+        log("Device being reconfigured.", "INFO")
+        return response(configure())
+    }
 
     return result
 }
@@ -447,6 +465,8 @@ def updateDeviceLastActivity(lastActivity) {
 
 def refresh() {
     log("Refreshing...", "INFO")
+    
+    log("${getVersionStatementString()}", "INFO")
     
     def retVal = zigbee.readAttribute(0x0402, 0x0000) +
     	zigbee.readAttribute(0x0001, 0x0020)
@@ -560,7 +580,11 @@ def setStateVersion(val) {
 }
 
 def getNewStateVersion() {
-	return 3
+	return 4
+}
+
+def getVersionStatementString() {
+	return "Current state version is ${getStateVersion()} and new state version is ${getNewStateVersion()}."
 }
 
 def shouldReconfigure() {
