@@ -217,11 +217,12 @@ def updated() {
 }
 
 def canPoll() {
-	if(state.lastPoll == null) {
+    def theCurrentTime = new Date().time
+    if(state.lastPoll == null) {
     	state.lastPoll = new Date().time
         log("Never polled before, ok to poll.", "INFO")
         return true
-    } else if((state.lastPoll - Date().time) >= (1000*60*60*4)) {
+    } else if((state.lastPoll - theCurrentTime) >= (1000*60*60*4)) {
     	state.lastPoll = new Date().time
         log("Minimum poll time elapsed. Ok to poll.", "INFO")
         return true
