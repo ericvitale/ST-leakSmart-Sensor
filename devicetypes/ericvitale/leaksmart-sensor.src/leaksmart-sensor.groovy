@@ -1,6 +1,7 @@
 /*
- * leakSmart Sensor v2
+ * leakSmart Sensor
  *
+ * Version 1.2.1 - Fixed case where some new sensors can be stuck "wet". (10/26/2016)
  * Version 1.2.0 - Various improvements, details below. (09/15/2016)
  *  New configuration options for setting the upper and lower limit of your battery
  *   life which will allow users to better tune the battery reporting against the
@@ -190,6 +191,8 @@ def updated() {
     setTopVolts(fullVolts)
     setBottomVolts(emptyVolts)
     
+    sendEvent(name: "water", value: "dry")
+    
     log("Top End Voltage = ${getTopVolts()}.", "INFO")
     log("Bottom End Voltage = ${getBottomVolts()}.", "INFO")
     
@@ -213,9 +216,26 @@ def updated() {
     }
 }
 
+def canPoll() {
+	if(state.lastPoll == null) {
+    	state.lastPoll = new Date().time
+        log("Never polled before, ok to poll.", "INFO")
+        return true
+    } else if((state.lastPoll - Date().time) >= (1000*60*60*4)) {
+    	state.lastPoll = new Date().time
+        log("Minimum poll time elapsed. Ok to poll.", "INFO")
+        return true
+    } else {
+    	log("Minimum poll time not elapsed.", "INFO")
+        return false
+    }
+}
+
 def poll() {
-	def retVal = zigbee.readAttribute(0x0402, 0x0000)    
-    return retVal
+	if(canPoll()) {
+		def retVal = zigbee.readAttribute(0x0402, 0x0000)    
+    	return retVal
+    }
 }
 
 def parse(String description) {
