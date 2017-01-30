@@ -1,6 +1,8 @@
 /*
- * leakSmart Sensor v2
+ * leakSmart Sensor
  *
+ * Version 1.2.2 - Added second fingerprint. (01/29/2017)
+ * Version 1.2.1 - Fixed case where some new sensors can be stuck "wet". (10/26/2016)
  * Version 1.2.0 - Various improvements, details below. (09/15/2016)
  *  New configuration options for setting the upper and lower limit of your battery
  *   life which will allow users to better tune the battery reporting against the
@@ -61,6 +63,7 @@ metadata {
         attribute "lastActivity", "string"
 
         fingerprint profileId: "0104", inClusters: "0000,0001,0003,0020,0402,0B02,FC02", outClusters: "0003,0019"
+		fingerprint profileId: "0104", inClusters: "0000,0001,0003,0402,0B02,FC02", outClusters: "0003,0019"
 	}
 
     simulator {
@@ -190,6 +193,8 @@ def updated() {
     setTopVolts(fullVolts)
     setBottomVolts(emptyVolts)
     
+    sendEvent(name: "water", value: "dry")
+    
     log("Top End Voltage = ${getTopVolts()}.", "INFO")
     log("Bottom End Voltage = ${getBottomVolts()}.", "INFO")
     
@@ -213,9 +218,27 @@ def updated() {
     }
 }
 
+def canPoll() {
+	def theCurrentTime = new Date().time
+	if(state.lastPoll == null) {
+    	state.lastPoll = new Date().time
+        log("Never polled before, ok to poll.", "INFO")
+        return true
+    } else if((theCurrentTime - state.lastPoll) >= (1000*60*60*4)) {
+    	state.lastPoll = new Date().time
+        log("Minimum poll time elapsed. Ok to poll.", "INFO")
+        return true
+    } else {
+    	log("Minimum poll time not elapsed.", "INFO")
+        return false
+    }
+}
+
 def poll() {
-	def retVal = zigbee.readAttribute(0x0402, 0x0000)    
-    return retVal
+	if(canPoll()) {
+		def retVal = zigbee.readAttribute(0x0402, 0x0000)    
+    	return retVal
+    }
 }
 
 def parse(String description) {
@@ -489,7 +512,7 @@ def configure() {
     try {
             def retVal = 
             zigbee.configureReporting(0x0001, 0x0020, 0x20, 1440, 84600, 0x01) +
-            zigbee.configureReporting(0x0402, 0x0000, 0x29, 300, 14400, 0x0064) +
+            zigbee.configureReporting(0x0402, 0x0000, 0x29, 1800, 14400, 0x0064) +
             zigbee.configureReporting(0x0b02, 0x0000, 0x00, 5, 14400, null) +
             zigbee.readAttribute(0x0402, 0x0000) +
             zigbee.readAttribute(0x0001, 0x0020)
@@ -580,7 +603,7 @@ def setStateVersion(val) {
 }
 
 def getNewStateVersion() {
-	return 4
+	return 7
 }
 
 def getVersionStatementString() {
