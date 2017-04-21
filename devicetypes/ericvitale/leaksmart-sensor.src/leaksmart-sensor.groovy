@@ -1,6 +1,7 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.2.3 - Added capability "Sensor". (04/20/2017)
  * Version 1.2.2 - Added second fingerprint. (01/29/2017)
  * Version 1.2.1 - Fixed case where some new sensors can be stuck "wet". (10/26/2016)
  * Version 1.2.0 - Various improvements, details below. (09/15/2016)
@@ -59,6 +60,7 @@ metadata {
         capability "Temperature Measurement"
         capability "Water Sensor"
         capability "Polling"
+        capability "Sensor"
         
         attribute "lastActivity", "string"
 
