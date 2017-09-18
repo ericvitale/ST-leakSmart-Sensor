@@ -1,6 +1,7 @@
 /*
  * leakSmart Sensor
  *
+ * Version b1.2.4 - Attempt to fix the refresh issue by returning the response. (10/18/2017)
  * Version 1.2.3 - Added capability "Sensor". (04/20/2017)
  * Version 1.2.2 - Added second fingerprint. (01/29/2017)
  * Version 1.2.1 - Fixed case where some new sensors can be stuck "wet". (10/26/2016)
@@ -239,7 +240,7 @@ def canPoll() {
 def poll() {
 	if(canPoll()) {
 		def retVal = zigbee.readAttribute(0x0402, 0x0000)    
-    	return retVal
+    	return response(retVal)
     }
 }
 
