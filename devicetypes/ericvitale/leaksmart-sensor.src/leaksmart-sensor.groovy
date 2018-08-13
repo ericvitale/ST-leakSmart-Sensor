@@ -412,7 +412,7 @@ private Map getBatteryResult(rawValue) {
 	    result.value = Math.min(100, (int) (pct * 100))
 		log("result.value = ${result.value}.", "DEBUG")
 	        //Math.round(d
-		lot("XX = ${(int)Math.round(pct * 100)}.", "DEBUG")
+		log("XX = ${(int)Math.round(pct * 100)}.", "DEBUG")
         	result.descriptionText = "${device.displayName} battery was ${result.value}%."
         }
     }
