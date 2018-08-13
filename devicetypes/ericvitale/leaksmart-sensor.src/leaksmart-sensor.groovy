@@ -1,6 +1,7 @@
 /*
  * leakSmart Sensor
  *
+ * Version 1.2.4a
  * Version 1.2.3 - Added capability "Sensor". (04/20/2017)
  * Version 1.2.2 - Added second fingerprint. (01/29/2017)
  * Version 1.2.1 - Fixed case where some new sensors can be stuck "wet". (10/26/2016)
@@ -402,8 +403,16 @@ private Map getBatteryResult(rawValue) {
         } else {
             def minVolts = getBottomVolts()
             def maxVolts = getTopVolts()
+		log("minVolts = ${getBottomVolts()}.", "DEBUG")
+		log("maxVolts = ${getTopVolts()}.", "DEBUG")
             def pct = (volts - minVolts) / (maxVolts - minVolts)
+		log("pct = ${pct}.", "DEBUG")
             result.value = Math.min(100, (int) pct * 100)
+		log("result.value = ${result.value}.", "DEBUG")
+	    result.value = Math.min(100, (int) (pct * 100))
+		log("result.value = ${result.value}.", "DEBUG")
+	        //Math.round(d
+		lot("XX = ${(int)Math.round(pct * 100)}.", "DEBUG")
         	result.descriptionText = "${device.displayName} battery was ${result.value}%."
         }
     }
