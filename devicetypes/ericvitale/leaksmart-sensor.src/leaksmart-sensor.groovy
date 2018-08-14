@@ -1,7 +1,10 @@
 /*
  * leakSmart Sensor
  *
- * Version 1.2.4a
+ * Version 1.2.4 - Various improvements, details below. (08/13/2018)
+ *   Fixed battery percentage rounding error that caused the battery to read 0% on occasion.
+ *   Updated logging prefixes.
+ *   Made the "wet" state blue.
  * Version 1.2.3 - Added capability "Sensor". (04/20/2017)
  * Version 1.2.2 - Added second fingerprint. (01/29/2017)
  * Version 1.2.1 - Fixed case where some new sensors can be stuck "wet". (10/26/2016)
@@ -53,6 +56,8 @@
  *
  */
 
+public static String version() { return "v1.2.4.20180813" }
+
 metadata {
     definition (name: "leakSmart Sensor", namespace: "ericvitale", author: "ericvitale@gmail.com", category: "C2") {
         capability "Configuration"
@@ -102,7 +107,7 @@ metadata {
         multiAttributeTile(name:"water", type: "generic", width: 6, height: 4){
             tileAttribute ("device.water", key: "PRIMARY_CONTROL") {
                 attributeState "dry", label: "Dry", icon:"st.alarm.water.dry", backgroundColor:"#ffffff"
-                attributeState "wet", label: "Wet", icon:"st.alarm.water.wet", backgroundColor:"#53a7c0"
+                attributeState "wet", label: "Wet", icon:"st.alarm.water.wet", backgroundColor:"#00a0dc"
             }
             
             tileAttribute ("device.lastActivity", key: "SECONDARY_CONTROL") {
@@ -138,6 +143,10 @@ metadata {
     }
 }
 
+private getLogPrefix() {
+	return "leakSmart.${version()}.${device.label}>>>"
+}
+
 private determineLogLevel(data) {
     switch (data?.toUpperCase()) {
         case "TRACE":
@@ -161,7 +170,7 @@ private determineLogLevel(data) {
 }
 
 def log(data, type) {
-    data = "leakSmart -- ${device.label} -- ${data ?: ''}"
+    data = "${getLogPrefix()} ${data ?: ''}"
         
     if (determineLogLevel(type) >= determineLogLevel(settings?.logging ?: "INFO")) {
         switch (type?.toUpperCase()) {
@@ -181,7 +190,7 @@ def log(data, type) {
                 log.error "${data}"
                 break
             default:
-                log.error "leakSmart -- ${device.label} -- Invalid Log Setting"
+                log.error "${getLogPrefix()} Invalid Log Setting"
         }
     }
 }
@@ -403,18 +412,9 @@ private Map getBatteryResult(rawValue) {
         } else {
             def minVolts = getBottomVolts()
             def maxVolts = getTopVolts()
-		log("minVolts = ${getBottomVolts()}.", "DEBUG")
-		log("maxVolts = ${getTopVolts()}.", "DEBUG")
             def pct = (volts - minVolts) / (maxVolts - minVolts)
-		log("pct = ${pct}.", "DEBUG")
-            result.value = Math.min(100, (int) pct * 100)
-		log("result.value = ${result.value}.", "DEBUG")
-	    result.value = Math.min(100, (int) (pct * 100))
-		log("result.value = ${result.value}.", "DEBUG")
-	        //Math.round(d
-		log("XX = ${(int)Math.round(pct * 100)}.", "DEBUG")
-		result.value = (int)Math.round(pct * 100)
-        	result.descriptionText = "${device.displayName} battery was ${result.value}%."
+	    result.value = (int)Math.round(pct * 100)
+            result.descriptionText = "${device.displayName} battery was ${result.value}%."
         }
     }
     
